@@ -4,6 +4,7 @@ description: >
   Orients the agent at the start of a session by loading workspace structure,
   identity, goals, and maintenance signals. Use this skill at the beginning of
   every session, or when you need to re-orient after context compaction.
+allowed-tools: bash, view, glob
 ---
 
 # Session Orientation
