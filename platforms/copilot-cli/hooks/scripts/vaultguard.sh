@@ -25,7 +25,7 @@ EOF
 fi
 
 # Fallback: legacy vault detection + auto-migrate
-if [ -f ops/config.yaml ] || [ -f .github/hooks/scripts/session-orient.sh ]; then
+if [ -f ops/config.yaml ] || [ -f .github/hooks/scripts/session-orient.sh ] || [ -f .claude/hooks/session-orient.sh ]; then
   cat > "$MARKER" << 'EOF'
 # Ars Contexta vault marker + config
 # This file identifies the directory as an Ars Contexta vault.

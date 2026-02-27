@@ -1381,7 +1381,9 @@ ops/
 
 `current.json` tracks: session_id, start_time, notes_created (array), notes_modified (array), discoveries (array), last_activity timestamp.
 
-**Session ID derivation:** Use `CLAUDE_CONVERSATION_ID` environment variable (available in Claude Code hook environment). Fallback to timestamp: `$(date +%Y%m%d-%H%M%S)`.
+**Session ID derivation:**
+- **Claude Code:** Use `CLAUDE_CONVERSATION_ID` environment variable. Fallback to timestamp: `$(date +%Y%m%d-%H%M%S)`.
+- **Copilot CLI:** Use `timestamp` from the hook input JSON (Unix ms). Fallback to `$(date +%Y%m%d-%H%M%S)`. Copilot does not provide a persistent session ID.
 
 **Session restore on /clear:** When a user runs /clear, SessionStart fires for the new conversation. The hook detects existing session data (goals.md, ops/ state), re-reads everything, and provides continuity despite context reset.
 
@@ -1487,7 +1489,11 @@ For Copilot CLI, add to `.github/hooks/arscontexta.json` (using additive merge).
 - No `matcher` groups — scripts check `toolName` from the input JSON payload
 - No `async` flag — all hooks run synchronously
 
-Generate all four hook scripts: session-orient.sh, session-capture.sh, validate-note.sh, auto-commit.sh.
+Generate hook scripts appropriate for the detected platform:
+
+**Claude Code:** Generate four scripts: session-orient.sh, session-capture.sh, validate-note.sh, auto-commit.sh. Place in `.claude/hooks/`.
+
+**Copilot CLI:** Generate five scripts: session-orient.sh, session-capture.sh, write-validate.sh, validate-pretool.sh, auto-commit.sh (plus utilities: vaultguard.sh, read_config.sh). Place in `.github/hooks/scripts/`. The validation is split because Copilot ignores postToolUse output — write-validate.sh logs warnings while validate-pretool.sh enforces via preToolUse deny decisions. Also generate the `session-orient` skill in `.github/skills/session-orient/SKILL.md` since Copilot ignores sessionStart hook stdout.
 
 ---
 

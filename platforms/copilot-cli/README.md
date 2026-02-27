@@ -112,5 +112,5 @@ A Copilot CLI deployment generates:
 | [Copilot CLI](https://docs.github.com/copilot/concepts/agents/about-copilot-cli) | Yes | Agent host |
 | `tree` | Yes | Workspace structure injection |
 | `ripgrep` (`rg`) | Yes | YAML queries, schema validation |
-| `jq` | Recommended | JSON parsing in hook scripts |
+| `jq` | Yes | JSON parsing in hook scripts (Copilot sends JSON on stdin) |
 | [qmd](https://github.com/tobi/qmd) | Optional | Semantic search |

@@ -22,7 +22,8 @@ if command -v jq &>/dev/null; then
   TOOL_ARGS=$(echo "$INPUT" | jq -r '.toolArgs // empty')
 else
   TOOL_NAME=$(echo "$INPUT" | grep -o '"toolName":"[^"]*"' | head -1 | sed 's/"toolName":"//;s/"//')
-  TOOL_ARGS=$(echo "$INPUT" | grep -o '"toolArgs":"[^"]*"' | head -1 | sed 's/"toolArgs":"//;s/"//')
+  # toolArgs is stringified JSON with escaped quotes — unescape before parsing
+  TOOL_ARGS=$(echo "$INPUT" | sed 's/.*"toolArgs":"//;s/"[,}].*//' | sed 's/\\"/"/g; s/\\\\/ /g')
 fi
 
 # Only validate edit/create operations
@@ -54,10 +55,13 @@ esac
 # For create operations, check if the content includes frontmatter
 # For edit operations on existing files, check the file
 if [ "$TOOL_NAME" = "create" ]; then
-  # Check the file_text in tool args for frontmatter
+  # Check the file_text in tool args for frontmatter (requires jq for reliable extraction)
   if command -v jq &>/dev/null; then
     CONTENT=$(echo "$TOOL_ARGS" | jq -r '.file_text // .content // empty' 2>/dev/null)
     [ -z "$CONTENT" ] && CONTENT=$(echo "$TOOL_ARGS" | jq -r '. | fromjson? | .file_text // .content // empty' 2>/dev/null)
+  else
+    # Cannot reliably extract multiline file_text without jq — skip validation
+    exit 0
   fi
 
   if [ -n "$CONTENT" ]; then

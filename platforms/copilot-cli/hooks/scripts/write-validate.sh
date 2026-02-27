@@ -24,7 +24,10 @@ if command -v jq &>/dev/null; then
   [ -z "$FILE" ] && FILE=$(echo "$TOOL_ARGS" | jq -r '. | fromjson? | .path // .file_path // empty' 2>/dev/null)
 else
   TOOL_NAME=$(echo "$INPUT" | grep -o '"toolName":"[^"]*"' | head -1 | sed 's/"toolName":"//;s/"//')
-  FILE=$(echo "$INPUT" | grep -o '"path":"[^"]*"' | head -1 | sed 's/"path":"//;s/"//')
+  # toolArgs is stringified JSON with escaped quotes — unescape before parsing
+  TOOL_ARGS_RAW=$(echo "$INPUT" | sed 's/.*"toolArgs":"//;s/"[,}].*//' | sed 's/\\"/"/g; s/\\\\/ /g')
+  FILE=$(echo "$TOOL_ARGS_RAW" | grep -o '"path":"[^"]*"' | head -1 | sed 's/"path":"//;s/"//')
+  [ -z "$FILE" ] && FILE=$(echo "$TOOL_ARGS_RAW" | grep -o '"file_path":"[^"]*"' | head -1 | sed 's/"file_path":"//;s/"//')
 fi
 
 # Only validate edit/create on notes
