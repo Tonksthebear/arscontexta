@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/session-orient.sh",
+        "timeoutSec": 10,
+        "comment": "Inject workspace structure, identity, goals, and maintenance signals at session start"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/write-validate.sh",
+        "timeoutSec": 5,
+        "comment": "Schema enforcement on note writes — NOTE: Copilot ignores postToolUse output; this logs only. For enforcement, use preToolUse."
+      },
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/auto-commit.sh",
+        "timeoutSec": 5,
+        "comment": "Git auto-commit after writes"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/validate-pretool.sh",
+        "timeoutSec": 5,
+        "comment": "Schema enforcement via deny — blocks writes to notes/ missing YAML frontmatter. Copilot processes preToolUse deny decisions."
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/session-capture.sh",
+        "timeoutSec": 15,
+        "comment": "Persist session state and auto-commit on session end"
+      }
+    ]
+  }
+}
