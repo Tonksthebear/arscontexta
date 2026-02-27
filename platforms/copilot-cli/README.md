@@ -17,7 +17,7 @@ Ars Contexta was built for Claude Code. This adapter maps the same concepts to C
 | Skills | `.claude/skills/` | `.github/skills/` |
 | Agents | `.claude/agents/` | `.github/agents/` |
 | MCP config | `.mcp.json` | `~/.copilot/mcp-config.json` |
-| Plugin manifest | `.claude-plugin/plugin.json` | TBD — Copilot plugin format |
+| Plugin manifest | `.claude-plugin/plugin.json` | `plugin.json` (Copilot CLI plugin format) |
 
 ## Hook Event Mapping
 
@@ -70,11 +70,7 @@ Skills reference tool names in their instructions. Claude Code and Copilot CLI u
 
 ### Recommended: `$ARSCONTEXTA_ROOT`
 
-Set in your shell profile to point at the plugin installation directory:
-
-```bash
-export ARSCONTEXTA_ROOT="$HOME/.copilot/plugins/arscontexta"
-```
+Set in your shell profile to point at the plugin installation directory. See the [Installation](#installation) section for the correct path based on your install method.
 
 This replaces `${CLAUDE_PLUGIN_ROOT}` references in skill files.
 
@@ -91,19 +87,56 @@ A Copilot CLI deployment generates:
 | Agents | `.github/agents/` | knowledge-guide subagent |
 | MCP config | Merged into `~/.copilot/mcp-config.json` | qmd semantic search |
 
-## Installation (Manual — Plugin Support TBD)
+## Installation
 
-1. Clone or copy the arscontexta repo to a known location
-2. Set `ARSCONTEXTA_ROOT` in your shell profile:
-   ```bash
-   export ARSCONTEXTA_ROOT="/path/to/arscontexta"
-   ```
-3. Copy or symlink hooks and skills to your vault:
+### Option A: Install as Plugin (Recommended)
+
+From GitHub (once merged):
+
+```bash
+copilot plugin install agenticnotetaking/arscontexta:platforms/copilot-cli
+```
+
+From a local clone:
+
+```bash
+git clone https://github.com/Tonksthebear/arscontexta.git
+copilot plugin install ./arscontexta/platforms/copilot-cli
+```
+
+Verify it loaded:
+
+```bash
+copilot plugin list
+```
+
+Then in a Copilot CLI session:
+
+```
+/skills list          # Should show session-orient
+```
+
+### Option B: Manual Copy (Per-Project)
+
+1. Copy hooks and skills to your vault:
    ```bash
    cp -r platforms/copilot-cli/hooks/ .github/hooks/
    cp -r platforms/copilot-cli/skills/ .github/skills/
+   cp platforms/copilot-cli/AGENTS.md ./AGENTS.md
    ```
-4. Run the session-orient skill on first session to verify: `/session-orient`
+2. Run the session-orient skill on first session: `/session-orient`
+
+### Setting ARSCONTEXTA_ROOT
+
+For either installation method, set `ARSCONTEXTA_ROOT` in your shell profile so skills can reference the methodology and kernel:
+
+```bash
+# Plugin install — points to plugin cache
+export ARSCONTEXTA_ROOT="$HOME/.copilot/state/installed-plugins/arscontexta"
+
+# Local clone — points to your clone
+export ARSCONTEXTA_ROOT="/path/to/arscontexta"
+```
 
 ## Prerequisites
 

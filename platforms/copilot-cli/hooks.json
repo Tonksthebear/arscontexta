@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "hooks/scripts/session-orient.sh",
+        "timeoutSec": 10,
+        "comment": "Session tracking — creates ops/sessions/current.json"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "hooks/scripts/write-validate.sh",
+        "timeoutSec": 5,
+        "comment": "Schema validation logging on note writes"
+      },
+      {
+        "type": "command",
+        "bash": "hooks/scripts/auto-commit.sh",
+        "timeoutSec": 5,
+        "comment": "Git auto-commit after writes"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "hooks/scripts/validate-pretool.sh",
+        "timeoutSec": 5,
+        "comment": "Blocks writes to notes/ missing YAML frontmatter"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "hooks/scripts/session-capture.sh",
+        "timeoutSec": 15,
+        "comment": "Persist session state and auto-commit on session end"
+      }
+    ]
+  }
+}
