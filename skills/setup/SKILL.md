@@ -35,13 +35,14 @@ Read these files to understand the methodology and available components. Read th
 
 Automated. No user interaction needed.
 
-Verify Claude Code environment:
+Detect the agent platform:
 
 ```
-Check filesystem:
-  .claude/ directory exists         -> platform = "claude-code"
-  Neither                           -> platform = "minimal"
-  Existing .md notes detected       -> note for proposal (V1: acknowledge and proceed fresh)
+Check filesystem and environment:
+  .claude/ directory exists                    -> platform = "claude-code"
+  .github/ directory exists + no .claude/      -> platform = "copilot-cli"
+  Neither                                      -> platform = "minimal"
+  Existing .md notes detected                  -> note for proposal (V1: acknowledge and proceed fresh)
 ```
 
 Record the platform tier in working memory. It controls which artifacts get generated:
@@ -49,6 +50,7 @@ Record the platform tier in working memory. It controls which artifacts get gene
 | Platform | Context File | Skills Location | Hooks | Automation Ceiling |
 |----------|-------------|-----------------|-------|--------------------|
 | Claude Code | CLAUDE.md | .claude/skills/ | .claude/hooks/ | Full |
+| Copilot CLI | CLAUDE.md | .github/skills/ | .github/hooks/ | Full |
 | Minimal | README.md | (none) | (none) | Convention only |
 
 ---
@@ -543,7 +545,7 @@ engine_version: "1.0.0"
 | [additional terms] | [domain terms] | [category] |
 
 ## Platform
-- Tier: [Claude Code / Minimal]
+- Tier: [Claude Code / Copilot CLI / Minimal]
 - Automation level: [full / convention / manual]
 - Automation: [full (default) / convention / manual]
 
@@ -620,6 +622,7 @@ The inbox folder is always generated. It provides zero-friction capture regardle
 This is the most critical generation step. The context file IS the system.
 
 **For Claude Code:** Generate `CLAUDE.md` using `${CLAUDE_PLUGIN_ROOT}/generators/claude-md.md` template.
+**For Copilot CLI:** Generate `CLAUDE.md` using the same template (Copilot CLI reads CLAUDE.md natively).
 **For Minimal:** Generate `README.md` as self-contained conventions document.
 
 **Context file composition algorithm:**
@@ -1108,7 +1111,7 @@ Generate the machine-readable derivation manifest. This is the KEY file that ena
 engine_version: "0.2.0"
 research_snapshot: "2026-02-10"
 generated_at: [ISO 8601 timestamp]
-platform: [claude-code | minimal]
+platform: [claude-code | copilot-cli | minimal]
 kernel_version: "1.0"
 
 dimensions:
@@ -1297,6 +1300,7 @@ For each skill:
 4. Write the transformed SKILL.md to the user's skills directory
 
 **For Claude Code:** Write to `.claude/skills/[domain-skill-name]/SKILL.md`
+**For Copilot CLI:** Write to `.github/skills/[domain-skill-name]/SKILL.md`
 
 **CRITICAL:** Do NOT generate skills from scratch or improvise their content. Read the source template and transform it. The templates contain quality gates, anti-shortcut language, and handoff formats that must be preserved.
 
@@ -1306,13 +1310,21 @@ Every generated skill must include:
 - Handoff block format for orchestrated execution
 - Domain-native vocabulary throughout
 
+##### Platform-Specific Skill Transformations
+
+**For Copilot CLI** (in addition to vocabulary transformation):
+1. Replace `${CLAUDE_PLUGIN_ROOT}` with `$ARSCONTEXTA_ROOT` in all file path references
+2. Replace tool names in `allowed-tools` frontmatter: `Read` → `view`, `Write` → `create, edit`, `Edit` → `edit`, `Bash` → `bash`, `Glob` → `glob`, `Grep` → `grep`, `AskUserQuestion` → `ask_user`
+3. Replace tool name references in instruction text (e.g., "Use the Read tool" → "Use the view tool")
+4. Also generate the `session-orient` skill from `platforms/copilot-cli/skills/session-orient/SKILL.md` — this replaces hook-based context injection
+
 ##### Skill Discoverability Protocol
 
-**Platform limitation:** Claude Code's skill index does not refresh mid-session. Skills created during /setup are not discoverable until the user restarts Claude Code.
+**Platform limitation:** Claude Code's skill index does not refresh mid-session. Copilot CLI's `/skills reload` command can reload skills without restart. Skills created during /setup are not discoverable until the user restarts (Claude Code) or runs `/skills reload` (Copilot CLI).
 
 After creating ALL skill files:
 
-1. **Inform the user:** Display "Generated [N] skills. Restart Claude Code to activate them."
+1. **Inform the user:** Display "Generated [N] skills. Restart Claude Code to activate them." (Claude Code) or "Generated [N] skills. Run /skills reload to activate them." (Copilot CLI)
 2. **Add to context file:** Include a "Recently Created Skills (Pending Activation)" section listing all generated skills with their domain-native names and creation timestamp:
 
 ```markdown
@@ -1325,7 +1337,7 @@ These skills were created during initialization. Restart Claude Code to activate
 ```
 
 3. **SessionStart hook detects activation:** The session-orient.sh hook checks for this section. Once skills are confirmed loaded (appear in skill index), the section can be removed from the context file.
-4. **Phase 6 guidance:** If any skills were created, Phase 6 output includes: "Restart Claude Code now to activate all skills, then try /[domain:help] to see what's available."
+4. **Phase 6 guidance:** If any skills were created, Phase 6 output includes: "Restart Claude Code now to activate all skills, then try /[domain:help] to see what's available." (Claude Code) or "Run /skills reload to activate all skills, then try /[domain:help] to see what's available." (Copilot CLI)
 
 ---
 
@@ -1337,11 +1349,19 @@ These skills were created during initialization. Restart Claude Code to activate
 
 Generated hooks MUST NOT overwrite existing user hooks. Before writing any hooks:
 
+**For Claude Code:**
 1. Read existing `.claude/settings.json` (if it exists)
 2. Parse existing hook matcher groups for each event type (hooks.SessionStart, hooks.PostToolUse, hooks.Stop, etc.)
 3. ADD new matcher groups to the event arrays -- never replace existing entries
 4. If a matcher group with the same `command` path already exists for that event, SKIP it (warn in output, don't overwrite)
 5. Write the merged result back to `.claude/settings.json`
+
+**For Copilot CLI:**
+1. Read existing `.github/hooks/arscontexta.json` (if it exists)
+2. Parse existing hook arrays for each event type (hooks.sessionStart, hooks.postToolUse, hooks.preToolUse, hooks.sessionEnd)
+3. ADD new hook entries to the event arrays -- never replace existing entries
+4. If a hook with the same `bash` script path already exists for that event, SKIP it
+5. Write the merged result back to `.github/hooks/arscontexta.json`
 
 **Validation criterion:** After hook generation, all pre-existing hooks are still present and functional.
 
@@ -1415,6 +1435,57 @@ For Claude Code, add to `.claude/settings.json` (using additive merge).
 ```
 
 **Critical:** The old flat format (`"type": "command"` at the matcher level) is rejected by Claude Code. Each event must use the nested structure: `"EventName": [{ "matcher": "...", "hooks": [{ "type": "command", "command": "..." }] }]`.
+
+For Copilot CLI, add to `.github/hooks/arscontexta.json` (using additive merge).
+
+**Hook format:** Copilot CLI uses a flat array structure with `version: 1`. Event names are camelCase (`sessionStart`, `postToolUse`, `preToolUse`, `sessionEnd`). Commands use `bash`/`powershell` keys instead of `command`. Timeout uses `timeoutSec`. No `matcher` field — tool filtering is done inside the scripts by reading `toolName` from stdin JSON. Use `preToolUse` for schema enforcement (Copilot processes deny decisions there; `postToolUse` output is ignored).
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/session-orient.sh",
+        "timeoutSec": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/validate-pretool.sh",
+        "timeoutSec": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/write-validate.sh",
+        "timeoutSec": 5
+      },
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/auto-commit.sh",
+        "timeoutSec": 5
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/scripts/session-capture.sh",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
+```
+
+**Key Copilot CLI differences:**
+- `sessionStart` hook stdout is **ignored** — context injection is handled by the `session-orient` skill (generated in `.github/skills/session-orient/SKILL.md`)
+- `postToolUse` output is **ignored** — use `preToolUse` with `permissionDecision: deny` for enforcement
+- No `matcher` groups — scripts check `toolName` from the input JSON payload
+- No `async` flag — all hooks run synchronously
 
 Generate all four hook scripts: session-orient.sh, session-capture.sh, validate-note.sh, auto-commit.sh.
 
@@ -1647,7 +1718,7 @@ ars contexta
 Your [domain] system is ready.
 
 Configuration:
-  Platform:        [Claude Code / Minimal]
+  Platform:        [Claude Code / Copilot CLI / Minimal]
   Automation: Full — all capabilities from day one
   [Key dimension highlights relevant to the user]
 
