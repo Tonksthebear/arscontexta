@@ -94,14 +94,14 @@ A Copilot CLI deployment generates:
 From GitHub (once merged):
 
 ```bash
-copilot plugin install agenticnotetaking/arscontexta:platforms/copilot-cli
+copilot plugin install agenticnotetaking/arscontexta
 ```
 
 From a local clone:
 
 ```bash
 git clone https://github.com/Tonksthebear/arscontexta.git
-copilot plugin install ./arscontexta/platforms/copilot-cli
+copilot plugin install ./arscontexta
 ```
 
 Verify it loaded:
@@ -113,7 +113,8 @@ copilot plugin list
 Then in a Copilot CLI session:
 
 ```
-/skills list          # Should show session-orient
+/skills list          # Should show setup, help, health, session-orient, etc.
+/agent                # Should show knowledge-guide
 ```
 
 ### Option B: Manual Copy (Per-Project)

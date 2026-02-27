@@ -1,0 +1,16 @@
+{
+  "name": "arscontexta",
+  "description": "Research-backed knowledge management system — generates cognitive vaults with derivation engine, processing pipeline, and session continuity",
+  "version": "0.1.0",
+  "author": {
+    "name": "Agentic Notetaking",
+    "url": "https://github.com/agenticnotetaking"
+  },
+  "repository": "https://github.com/agenticnotetaking/arscontexta",
+  "license": "MIT",
+  "keywords": ["knowledge-management", "note-taking", "research", "methodology", "vault"],
+  "category": "productivity",
+  "skills": ["skills/", "platforms/copilot-cli/skills/"],
+  "agents": "agents/",
+  "hooks": "platforms/copilot-cli/hooks.json"
+}
