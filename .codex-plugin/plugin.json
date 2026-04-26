@@ -20,7 +20,7 @@
     "zettelkasten",
     "knowledge-graph"
   ],
-  "skills": "./skills/",
+  "skills": "./platforms/codex/skills/",
   "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "Ars Contexta",

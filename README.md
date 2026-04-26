@@ -342,7 +342,7 @@ arscontexta/
 |   +-- use-case-presets.md      # Pre-validated configs
 |-- platforms/                   # Platform-specific adapters
 |   |-- claude-code/
-|   |-- codex/
+|   |-- codex/                   # Codex docs, hooks, and translated skills
 |   +-- shared/
 |-- presets/                     # Pre-validated configurations
 |-- scripts/                     # Utility scripts
@@ -383,8 +383,8 @@ codex plugin marketplace add .
 ```
 
 Then install `arscontexta` from the added marketplace in Codex. The Codex
-manifest is [.codex-plugin/plugin.json](.codex-plugin/plugin.json), and the
-Codex platform adapter lives in [platforms/codex/](platforms/codex/).
+manifest is [.codex-plugin/plugin.json](.codex-plugin/plugin.json), and it
+points at translated Codex skills in [platforms/codex/skills/](platforms/codex/skills/).
 
 ### Key Files for Contributors
 
