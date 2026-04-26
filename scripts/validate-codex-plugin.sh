@@ -13,16 +13,22 @@ command -v jq >/dev/null 2>&1 || fail "jq is required"
 
 jq empty \
   .codex-plugin/plugin.json \
+  platforms/codex/.codex-plugin/plugin.json \
   .agents/plugins/marketplace.json \
+  platforms/codex/hooks/codex-hooks.json \
   hooks/codex-hooks.json \
   platforms/codex/hooks/codex-hooks.json.template
 
 sh -n \
   hooks/scripts/codex-plugin-hook.sh \
+  platforms/codex/hooks/scripts/codex-plugin-hook.sh \
   platforms/codex/hooks/codex-hooks.sh.template
 
-skills_path="$(jq -r '.skills' .codex-plugin/plugin.json)"
-[ "$skills_path" = "./platforms/codex/skills/" ] || fail "Codex manifest must point at translated Codex skills"
+marketplace_path="$(jq -r '.plugins[] | select(.name == "arscontexta") | .source.path' .agents/plugins/marketplace.json)"
+[ "$marketplace_path" = "./platforms/codex" ] || fail "Marketplace must point at non-empty Codex plugin root"
+
+skills_path="$(jq -r '.skills' platforms/codex/.codex-plugin/plugin.json)"
+[ "$skills_path" = "./skills/" ] || fail "Codex plugin-root manifest must point at translated Codex skills"
 
 for skill in setup help ask health recommend architect add-domain reseed tutorial upgrade; do
   [ -f "platforms/codex/skills/$skill/SKILL.md" ] || fail "missing Codex skill: $skill"

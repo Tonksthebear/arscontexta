@@ -383,9 +383,9 @@ Clone this repo and add the local Codex marketplace:
 codex plugin marketplace add .
 ```
 
-Then install `arscontexta` from the added marketplace in Codex. The Codex
-manifest is [.codex-plugin/plugin.json](.codex-plugin/plugin.json), and it
-points at translated Codex skills in [platforms/codex/skills/](platforms/codex/skills/).
+Then install `arscontexta` from the added marketplace in Codex. The marketplace
+points at [platforms/codex/](platforms/codex/), which contains the Codex
+manifest, hooks, and translated skills.
 
 ### Key Files for Contributors
 
