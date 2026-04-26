@@ -27,6 +27,10 @@ Read these files to understand the methodology and available components. Read th
 
 **Generation references (read during Phase 5):**
 - `${CLAUDE_PLUGIN_ROOT}/generators/claude-md.md` -- CLAUDE.md generation template
+- `${CLAUDE_PLUGIN_ROOT}/platforms/codex/generator.md` -- CODEX.md generation reference
+- `${CLAUDE_PLUGIN_ROOT}/platforms/codex/skills.md` -- Codex skill translation rules
+- `${CLAUDE_PLUGIN_ROOT}/platforms/codex/hooks/codex-hooks.json.template` -- Codex generated-vault hook template
+- `${CLAUDE_PLUGIN_ROOT}/platforms/codex/hooks/codex-hooks.sh.template` -- Codex hook dispatcher template
 - `${CLAUDE_PLUGIN_ROOT}/generators/features/*.md` -- composable feature blocks for context file composition
 
 ---
@@ -35,11 +39,13 @@ Read these files to understand the methodology and available components. Read th
 
 Automated. No user interaction needed.
 
-Verify Claude Code environment:
+Detect the active agent platform:
 
 ```
 Check filesystem:
   .claude/ directory exists         -> platform = "claude-code"
+  CODEX.md or .codex-plugin exists  -> platform = "codex"
+  Codex runtime/user says Codex     -> platform = "codex"
   Neither                           -> platform = "minimal"
   Existing .md notes detected       -> note for proposal (V1: acknowledge and proceed fresh)
 ```
@@ -49,6 +55,7 @@ Record the platform tier in working memory. It controls which artifacts get gene
 | Platform | Context File | Skills Location | Hooks | Automation Ceiling |
 |----------|-------------|-----------------|-------|--------------------|
 | Claude Code | CLAUDE.md | .claude/skills/ | .claude/hooks/ | Full |
+| Codex | CODEX.md | Codex plugin skills | Codex hooks -> ops/scripts/codex-hooks.sh | Full |
 | Minimal | README.md | (none) | (none) | Convention only |
 
 ---
@@ -543,7 +550,7 @@ engine_version: "1.0.0"
 | [additional terms] | [domain terms] | [category] |
 
 ## Platform
-- Tier: [Claude Code / Minimal]
+- Tier: [Claude Code / Codex / Minimal]
 - Automation level: [full / convention / manual]
 - Automation: [full (default) / convention / manual]
 
@@ -620,6 +627,7 @@ The inbox folder is always generated. It provides zero-friction capture regardle
 This is the most critical generation step. The context file IS the system.
 
 **For Claude Code:** Generate `CLAUDE.md` using `${CLAUDE_PLUGIN_ROOT}/generators/claude-md.md` template.
+**For Codex:** Generate `CODEX.md` using `${CLAUDE_PLUGIN_ROOT}/platforms/codex/generator.md` as the platform reference. Codex uses plain-language requests instead of slash-command invocation, so include a command translation table.
 **For Minimal:** Generate `README.md` as self-contained conventions document.
 
 **Context file composition algorithm:**
@@ -1293,10 +1301,11 @@ The 16 skill sources to install:
 For each skill:
 1. Read `${CLAUDE_PLUGIN_ROOT}/skill-sources/[name]/SKILL.md`
 2. Apply vocabulary transformation — rename and update ALL internal references using the vocabulary mapping from `ops/derivation.md`
-3. Adjust skill metadata (set `context: fork` for fresh context per invocation)
+3. Adjust skill metadata for the detected platform
 4. Write the transformed SKILL.md to the user's skills directory
 
 **For Claude Code:** Write to `.claude/skills/[domain-skill-name]/SKILL.md`
+**For Codex:** Read `${CLAUDE_PLUGIN_ROOT}/platforms/codex/skills.md`, then keep skills Codex-readable: preserve `name` and `description`, remove Claude-only operational assumptions from generated instructions, and include natural-language trigger phrases instead of relying on slash commands. If project-local Codex skill discovery is unavailable, document that plugin-provided skills remain available and put runtime workflow guidance in `CODEX.md`.
 
 **CRITICAL:** Do NOT generate skills from scratch or improvise their content. Read the source template and transform it. The templates contain quality gates, anti-shortcut language, and handoff formats that must be preserved.
 
@@ -1308,11 +1317,13 @@ Every generated skill must include:
 
 ##### Skill Discoverability Protocol
 
-**Platform limitation:** Claude Code's skill index does not refresh mid-session. Skills created during /setup are not discoverable until the user restarts Claude Code.
+**Claude Code limitation:** Claude Code's skill index does not refresh mid-session. Skills created during /setup are not discoverable until the user restarts Claude Code.
+
+**Codex behavior:** Codex users invoke skills through natural-language requests. Do not tell Codex users to use `/arscontexta:*` or restart Claude Code. If generated project-local skills are not automatically discoverable, `CODEX.md` must list the direct request patterns for each workflow.
 
 After creating ALL skill files:
 
-1. **Inform the user:** Display "Generated [N] skills. Restart Claude Code to activate them."
+1. **Inform the user:** For Claude Code, display "Generated [N] skills. Restart Claude Code to activate them." For Codex, display "Generated [N] workflows. Ask for them by name, for example: run reduce on `inbox/file.md`."
 2. **Add to context file:** Include a "Recently Created Skills (Pending Activation)" section listing all generated skills with their domain-native names and creation timestamp:
 
 ```markdown
@@ -1325,7 +1336,7 @@ These skills were created during initialization. Restart Claude Code to activate
 ```
 
 3. **SessionStart hook detects activation:** The session-orient.sh hook checks for this section. Once skills are confirmed loaded (appear in skill index), the section can be removed from the context file.
-4. **Phase 6 guidance:** If any skills were created, Phase 6 output includes: "Restart Claude Code now to activate all skills, then try /[domain:help] to see what's available."
+4. **Phase 6 guidance:** For Claude Code, if any skills were created, Phase 6 output includes: "Restart Claude Code now to activate all skills, then try /[domain:help] to see what's available." For Codex, include: "Ask 'show available Ars Contexta workflows' or 'run health check' to begin."
 
 ---
 
@@ -1337,11 +1348,11 @@ These skills were created during initialization. Restart Claude Code to activate
 
 Generated hooks MUST NOT overwrite existing user hooks. Before writing any hooks:
 
-1. Read existing `.claude/settings.json` (if it exists)
+1. Read existing platform hook config if it exists (`.claude/settings.json` for Claude Code, `~/.codex/hooks.json` or project-provided Codex hook template for Codex)
 2. Parse existing hook matcher groups for each event type (hooks.SessionStart, hooks.PostToolUse, hooks.Stop, etc.)
 3. ADD new matcher groups to the event arrays -- never replace existing entries
 4. If a matcher group with the same `command` path already exists for that event, SKIP it (warn in output, don't overwrite)
-5. Write the merged result back to `.claude/settings.json`
+5. Write the merged result back to the platform hook config
 
 **Validation criterion:** After hook generation, all pre-existing hooks are still present and functional.
 
@@ -1361,7 +1372,7 @@ ops/
 
 `current.json` tracks: session_id, start_time, notes_created (array), notes_modified (array), discoveries (array), last_activity timestamp.
 
-**Session ID derivation:** Use `CLAUDE_CONVERSATION_ID` environment variable (available in Claude Code hook environment). Fallback to timestamp: `$(date +%Y%m%d-%H%M%S)`.
+**Session ID derivation:** Use platform hook payload/session fields when present (`CLAUDE_CONVERSATION_ID` for Claude Code, `session_id` from Codex hook JSON). Fallback to timestamp: `$(date +%Y%m%d-%H%M%S)`.
 
 **Session restore on /clear:** When a user runs /clear, SessionStart fires for the new conversation. The hook detects existing session data (goals.md, ops/ state), re-reads everything, and provides continuity despite context reset.
 
@@ -1417,6 +1428,15 @@ For Claude Code, add to `.claude/settings.json` (using additive merge).
 **Critical:** The old flat format (`"type": "command"` at the matcher level) is rejected by Claude Code. Each event must use the nested structure: `"EventName": [{ "matcher": "...", "hooks": [{ "type": "command", "command": "..." }] }]`.
 
 Generate all four hook scripts: session-orient.sh, session-capture.sh, validate-note.sh, auto-commit.sh.
+
+For Codex, generate `ops/scripts/codex-hooks.sh` as the dispatcher and install
+the hook shape from `${CLAUDE_PLUGIN_ROOT}/platforms/codex/hooks/codex-hooks.json.template`.
+Use `${CLAUDE_PLUGIN_ROOT}/platforms/codex/hooks/codex-hooks.sh.template` as
+the dispatcher starting point.
+Codex 0.125.0 emits `PostToolUse` for both `apply_patch` file edits and `Bash`.
+Do not assume Claude's `tool_input.file_path`; extract changed paths from Codex
+payloads (`tool_name`, `tool_input`, `tool_response`, and `cwd`) before running
+note validation and auto-commit.
 
 ---
 
@@ -1608,6 +1628,8 @@ Your memory is ready.
 
 Show available commands in the user's vocabulary. Resolve command names from `ops/derivation-manifest.md` vocabulary:
 
+**Claude Code output:**
+
 ```
 Here's what you can do:
 
@@ -1620,6 +1642,21 @@ Here's what you can do:
 ```
 
 Note: Plugin commands use the format `/arscontexta:command-name`. List all commands explicitly since they may not appear in tab completion. If skills were generated, note they require a Claude Code restart.
+
+**Codex output:**
+
+```
+Here's what you can ask for:
+
+  Run [domain:reduce] on inbox/source.md
+  Find connections between my [domain:notes]
+  Run a health check on this knowledge system
+  Show available Ars Contexta workflows
+  Recommend the next action
+  Research a topic and grow the graph
+```
+
+Note: Codex uses natural-language requests, not slash commands.
 
 ### First-Success Moment
 
@@ -1647,7 +1684,7 @@ ars contexta
 Your [domain] system is ready.
 
 Configuration:
-  Platform:        [Claude Code / Minimal]
+  Platform:        [Claude Code / Codex / Minimal]
   Automation: Full — all capabilities from day one
   [Key dimension highlights relevant to the user]
 
@@ -1656,7 +1693,8 @@ Created:
   [context file name]
   [templates created]
   16 skills generated (vocabulary-transformed)
-  10 plugin commands available via /arscontexta:*
+  [Claude Code: 10 plugin commands available via /arscontexta:*]
+  [Codex: plugin workflows available through natural-language requests]
   [hooks configured]
   ops/derivation.md      -- the complete record of how this system was derived
   ops/derivation-manifest.md -- machine-readable config for runtime skills
@@ -1666,16 +1704,17 @@ Created:
 Kernel Validation: [PASS count] / 15 passed
 [Any warnings to address]
 
-IMPORTANT: Restart Claude Code now to activate skills and hooks.
-  Skills and hooks take effect after restart — they are not available in the current session.
+[Claude Code only:]
+  IMPORTANT: Restart Claude Code now to activate skills and hooks.
+    Skills and hooks take effect after restart — they are not available in the current session.
 
 Next steps:
-  1. Quit and restart Claude Code (required — skills won't work until you do)
-  2. Read your CLAUDE.md -- it's your complete methodology
-  3. Try /arscontexta:help to see all available commands
+  1. [Claude Code: Quit and restart Claude Code] [Codex: Start a fresh Codex session in this vault]
+  2. [Claude Code: Read your CLAUDE.md] [Codex: Read your CODEX.md] -- it's your complete methodology
+  3. [Claude Code: Try /arscontexta:help] [Codex: Ask "show available Ars Contexta workflows"]
   4. [If qmd not installed: "Install qmd for semantic search: npm install -g @tobilu/qmd (or bun install -g @tobilu/qmd), then run qmd init, qmd update, qmd embed"]
-  5. [If personality not enabled: "Run /arscontexta:architect later to tune the agent's voice"]
-  6. Try /arscontexta:tutorial for a guided walkthrough
+  5. [If personality not enabled: "Ask for architect guidance later to tune the agent's voice"]
+  6. [Claude Code: Try /arscontexta:tutorial] [Codex: Ask for the Ars Contexta tutorial]
 
 ```
 
@@ -1683,7 +1722,7 @@ Next steps:
 
 Include these based on system state:
 - If qmd not installed and semantic-search is active: npm/bun install instructions + qmd init/update/embed + `.mcp.json` contract
-- If personality not enabled: mention `/arscontexta:architect` for future voice tuning once the vault has 50+ notes
+- If personality not enabled: for Claude Code, mention `/arscontexta:architect` for future voice tuning once the vault has 50+ notes; for Codex, say to ask for architect guidance
 - If any kernel checks failed: specific remediation instructions
 
 ---

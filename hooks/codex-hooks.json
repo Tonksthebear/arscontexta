@@ -1,0 +1,49 @@
+{
+  "description": "Ars Contexta Codex hooks -- session orientation, post-write validation, and session capture",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash hooks/scripts/codex-plugin-hook.sh SessionStart",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash hooks/scripts/codex-plugin-hook.sh PostToolUse",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash hooks/scripts/codex-plugin-hook.sh PostToolUse",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash hooks/scripts/codex-plugin-hook.sh Stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

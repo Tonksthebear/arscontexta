@@ -2,18 +2,20 @@
 
 **A second brain for your agent.**
 
-A Claude Code plugin that generates complete knowledge systems from conversation.
+A Claude Code and Codex plugin that generates complete knowledge systems from conversation.
 You describe how you think and work. The engine derives a cognitive architecture
 -- folder structure, context files, processing pipeline, hooks, navigation maps,
 and note templates -- tailored to your domain and backed by 249 research claims.
 
 No templates. No configuration. Just conversation.
 
-**v0.8.0** · Claude Code plugin · MIT
+**v0.8.0** · Claude Code and Codex plugin · MIT
 
 ---
 
 ## Installation
+
+### Claude Code
 
 1. Add the marketplace to Claude Code:
    ```
@@ -37,6 +39,24 @@ No templates. No configuration. Just conversation.
 6. Restart Claude Code again to activate generated hooks and skills
 
 7. Run `/arscontexta:help` to see everything available
+
+### Codex
+
+Codex support is available through the repo-local Codex plugin manifest:
+
+```
+.codex-plugin/plugin.json
+```
+
+Add the local marketplace from a clone:
+
+```
+codex plugin marketplace add .
+```
+
+Then install `arscontexta` from the `agenticnotetaking` marketplace in Codex.
+Codex uses natural-language requests instead of Claude slash commands; for
+example, ask "set up my knowledge system" or "run a health check on my vault."
 
 ---
 
@@ -65,11 +85,12 @@ domain needs and why.
 
 ## The Setup Flow
 
-`/arscontexta:setup` runs a 6-phase process:
+Setup runs a 6-phase process (`/arscontexta:setup` in Claude Code, or "set up
+my knowledge system" in Codex):
 
 | Phase | What Happens |
 |-------|-------------|
-| **Detection** | Detects Claude Code environment and capabilities |
+| **Detection** | Detects agent platform and capabilities |
 | **Understanding** | 2-4 conversation turns where you describe your domain |
 | **Derivation** | Maps signals to eight configuration dimensions with confidence scoring |
 | **Proposal** | Shows what will be generated and why, in your vocabulary |
@@ -80,7 +101,8 @@ The whole process takes about 20 minutes. It's token-intensive because the engin
 reads research claims, reasons about your domain, and generates substantial output.
 This is a one-time investment -- after setup, your agent remembers.
 
-For advanced users: `/arscontexta:setup --advanced` to configure dimensions directly.
+For advanced users: use `/arscontexta:setup --advanced` in Claude Code, or ask
+Codex to set up the system in advanced mode, to configure dimensions directly.
 
 ---
 
@@ -102,6 +124,9 @@ or `decisions/`), but the separation is invariant.
 ## Commands
 
 ### Plugin-Level (always available)
+
+Claude Code uses slash commands. Codex uses the same workflow names through
+plain-language requests.
 
 | Command | What It Does |
 |---------|-------------|
@@ -182,6 +207,11 @@ Four hooks automate quality enforcement:
 | **Auto Commit** | `PostToolUse` (Write, async) | Git auto-commit, non-blocking |
 | **Session Capture** | `Stop` | Persists session state to `ops/sessions/` |
 
+Codex hook support uses a Codex-specific dispatcher. Codex 0.125.0 emits
+`PostToolUse` for both `apply_patch` file edits and `Bash`; generated vaults
+must parse Codex payloads instead of assuming Claude's `tool_input.file_path`
+shape.
+
 ---
 
 ## The Research Graph
@@ -206,6 +236,9 @@ Every kernel primitive includes `cognitive_grounding` linking to specific resear
 - **Wiki links** -- spreading activation theory
 
 Query directly: `/arscontexta:ask "Why does my system use atomic notes?"`
+
+In Codex, ask the same thing in plain language: "Why does my system use atomic
+notes? Answer from the Ars Contexta research graph."
 
 ---
 
@@ -258,7 +291,8 @@ Keep qmd MCP configuration and tool preapproval in `.mcp.json`.
 
 | Dependency | Required | Purpose |
 |-----------|----------|---------|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) v1.0.33+ | Yes | Plugin host |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) v1.0.33+ | One host option | Claude plugin host |
+| Codex CLI 0.125.0+ | One host option | Codex plugin host |
 | `tree` | Yes | Workspace structure injection |
 | `ripgrep` (`rg`) | Yes | YAML queries, schema validation |
 | [qmd](https://github.com/tobi/qmd) | Optional | Semantic search |
@@ -272,6 +306,10 @@ arscontexta/
 |-- .claude-plugin/
 |   |-- plugin.json              # Plugin manifest
 |   +-- marketplace.json         # Marketplace listing
+|-- .codex-plugin/
+|   +-- plugin.json              # Codex plugin manifest
+|-- .agents/plugins/
+|   +-- marketplace.json         # Codex local marketplace listing
 |-- skills/                      # 10 plugin-level commands
 |   |-- setup/                   # Conversational onboarding
 |   |-- help/                    # Contextual guidance
@@ -304,6 +342,7 @@ arscontexta/
 |   +-- use-case-presets.md      # Pre-validated configs
 |-- platforms/                   # Platform-specific adapters
 |   |-- claude-code/
+|   |-- codex/
 |   +-- shared/
 |-- presets/                     # Pre-validated configurations
 |-- scripts/                     # Utility scripts
@@ -313,6 +352,8 @@ arscontexta/
 ---
 
 ## Development
+
+### Claude Code
 
 Clone this repo and add the marketplace to Claude Code:
 
@@ -332,6 +373,18 @@ Every time you make changes, re-install the plugin:
 /plugin uninstall arscontexta@agenticnotetaking
 /plugin install arscontexta@agenticnotetaking
 ```
+
+### Codex
+
+Clone this repo and add the local Codex marketplace:
+
+```
+codex plugin marketplace add .
+```
+
+Then install `arscontexta` from the added marketplace in Codex. The Codex
+manifest is [.codex-plugin/plugin.json](.codex-plugin/plugin.json), and the
+Codex platform adapter lives in [platforms/codex/](platforms/codex/).
 
 ### Key Files for Contributors
 
@@ -363,6 +416,8 @@ on your conversation.
 | Feature | Status |
 |---------|--------|
 | Claude Code plugin | Available |
+| Codex plugin manifest | Available |
+| Codex generated-vault adapter | In progress |
 | Marketplace listing | Available |
 | Multi-agent processing | In progress |
 

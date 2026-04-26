@@ -1,0 +1,144 @@
+#!/bin/sh
+# Ars Contexta Codex hook dispatcher.
+# Generated into ops/scripts/codex-hooks.sh.
+
+EVENT="${1:-}"
+INPUT="$(cat)"
+
+json_get() {
+  key="$1"
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$INPUT" | jq -r "$key // empty"
+  else
+    printf '%s' "$INPUT" | sed -n "s/.*\"$(printf '%s' "$key" | sed 's/^\\.//')\":\"\\([^\"]*\\)\".*/\\1/p" | head -1
+  fi
+}
+
+event_name() {
+  if [ -n "$EVENT" ]; then
+    printf '%s' "$EVENT"
+  else
+    json_get ".hook_event_name"
+  fi
+}
+
+session_id() {
+  json_get ".session_id"
+}
+
+tool_name() {
+  json_get ".tool_name"
+}
+
+tool_command() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$INPUT" | jq -r '.tool_input.command // empty'
+  fi
+}
+
+emit_tree() {
+  echo "## Workspace Structure"
+  echo
+  if command -v tree >/dev/null 2>&1; then
+    tree -L 3 --charset ascii -I '.git|node_modules' -P '*.md' .
+  else
+    find . -maxdepth 3 -name "*.md" -not -path "./.git/*" -not -path "*/node_modules/*" | sort
+  fi
+  echo
+}
+
+session_start() {
+  mkdir -p ops/sessions 2>/dev/null || true
+  sid="$(session_id)"
+  ts="$(date -u +"%Y%m%d-%H%M%S")"
+
+  if [ -n "$sid" ]; then
+    printf '{\n  "id": "%s",\n  "started": "%s",\n  "status": "active"\n}\n' "$sid" "$ts" > ops/sessions/current.json 2>/dev/null || true
+  fi
+
+  emit_tree
+
+  [ -f self/goals.md ] && cat self/goals.md && echo
+  [ -f ops/goals.md ] && cat ops/goals.md && echo
+  [ -f self/identity.md ] && cat self/identity.md && echo
+
+  inbox_count="$(find inbox -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+  obs_count="$(find ops/observations -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+  tension_count="$(find ops/tensions -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+
+  [ "${inbox_count:-0}" -ge 3 ] && echo "CONDITION: $inbox_count inbox items. Consider processing."
+  [ "${obs_count:-0}" -ge 10 ] && echo "CONDITION: $obs_count pending observations. Consider rethink."
+  [ "${tension_count:-0}" -ge 5 ] && echo "CONDITION: $tension_count unresolved tensions. Consider rethink."
+}
+
+paths_from_apply_patch() {
+  tool_command | awk '
+    /^\*\*\* Add File: / { sub(/^\*\*\* Add File: /, ""); print; next }
+    /^\*\*\* Update File: / { sub(/^\*\*\* Update File: /, ""); print; next }
+    /^\*\*\* Delete File: / { sub(/^\*\*\* Delete File: /, ""); print; next }
+  '
+}
+
+paths_from_bash() {
+  cmd="$(tool_command)"
+  printf '%s\n' "$cmd" |
+    sed -n \
+      -e "s/.*> *['\"]\\{0,1\\}\\([^'\" ;|][^'\" ;|]*\\.md\\)['\"]\\{0,1\\}.*/\\1/p" \
+      -e "s/.*apply_patch.*\\*\\*\\* Add File: \\([^ ]*\\.md\\).*/\\1/p" \
+      -e "s/.*apply_patch.*\\*\\*\\* Update File: \\([^ ]*\\.md\\).*/\\1/p"
+}
+
+validate_note() {
+  file="$1"
+  [ -f "$file" ] || return 0
+
+  case "$file" in
+    notes/*.md|*/notes/*.md|thinking/*.md|*/thinking/*.md)
+      warns=""
+      head -1 "$file" | grep -q '^---$' || warns="${warns}Missing YAML frontmatter. "
+      head -40 "$file" | grep -q '^description:' || warns="${warns}Missing description field. "
+      head -40 "$file" | grep -q '^topics:' || warns="${warns}Missing topics field. "
+      if [ -n "$warns" ]; then
+        name="$(basename "$file" .md)"
+        printf '{"additionalContext":"Schema warnings for %s: %s"}\n' "$name" "$warns"
+      fi
+      ;;
+  esac
+}
+
+post_tool_use() {
+  case "$(tool_name)" in
+    apply_patch)
+      paths_from_apply_patch | while IFS= read -r path; do
+        validate_note "$path"
+      done
+      ;;
+    Bash)
+      paths_from_bash | while IFS= read -r path; do
+        validate_note "$path"
+      done
+      ;;
+  esac
+}
+
+session_stop() {
+  mkdir -p ops/sessions 2>/dev/null || true
+  sid="$(session_id)"
+  ts="$(date -u +"%Y%m%d-%H%M%S")"
+  [ -z "$sid" ] && sid="$ts"
+  printf '{\n  "id": "%s",\n  "stopped": "%s",\n  "status": "stopped"\n}\n' "$sid" "$ts" > "ops/sessions/${ts}.json" 2>/dev/null || true
+}
+
+case "$(event_name)" in
+  SessionStart|session-start)
+    session_start
+    ;;
+  PostToolUse|post-write|post-tool-use)
+    post_tool_use
+    ;;
+  Stop|session-stop)
+    session_stop
+    ;;
+esac
+
+exit 0

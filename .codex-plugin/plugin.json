@@ -1,0 +1,43 @@
+{
+  "name": "arscontexta",
+  "version": "0.8.0",
+  "description": "Conversational derivation engine for agent-native knowledge systems.",
+  "author": {
+    "name": "Heinrich",
+    "email": "arscontexta@proton.me",
+    "url": "https://arscontexta.org"
+  },
+  "homepage": "https://arscontexta.org",
+  "repository": "https://github.com/agenticnotetaking/arscontexta",
+  "license": "MIT",
+  "keywords": [
+    "knowledge-management",
+    "tools-for-thought",
+    "memory-system",
+    "derivation",
+    "cognitive-architecture",
+    "agent-native",
+    "zettelkasten",
+    "knowledge-graph"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "Ars Contexta",
+    "shortDescription": "Generate and operate local agent memory systems.",
+    "longDescription": "Ars Contexta derives plain-markdown knowledge systems from conversation, then gives Codex the skills and hooks to operate that system across sessions.",
+    "developerName": "Heinrich",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://arscontexta.org",
+    "defaultPrompt": [
+      "Set up my knowledge system.",
+      "Run a health check on my vault.",
+      "Explain how Ars Contexta should structure my notes."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
