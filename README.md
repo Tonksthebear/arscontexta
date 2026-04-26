@@ -42,21 +42,27 @@ No templates. No configuration. Just conversation.
 
 ### Codex
 
-Codex support is available through the repo-local Codex plugin manifest:
+Codex support is available through the Codex plugin manifest:
 
 ```
-.codex-plugin/plugin.json
+platforms/codex/.codex-plugin/plugin.json
 ```
 
-Add the local marketplace from a clone:
+Add the Git-backed marketplace:
 
 ```
-codex plugin marketplace add .
+codex plugin marketplace add agenticnotetaking/arscontexta
 ```
 
 Then install `arscontexta` from the `agenticnotetaking` marketplace in Codex.
 Codex uses natural-language requests instead of Claude slash commands; for
 example, ask "set up my knowledge system" or "run a health check on my vault."
+
+To update a Git-backed marketplace after repo changes:
+
+```
+codex plugin marketplace upgrade agenticnotetaking
+```
 
 ---
 
@@ -377,7 +383,14 @@ Every time you make changes, re-install the plugin:
 
 ### Codex
 
-Clone this repo and add the local Codex marketplace:
+For normal installation, add the Git-backed marketplace:
+
+```
+codex plugin marketplace add agenticnotetaking/arscontexta
+```
+
+For active local development, clone this repo and add the local Codex
+marketplace:
 
 ```
 codex plugin marketplace add .
@@ -385,7 +398,16 @@ codex plugin marketplace add .
 
 Then install `arscontexta` from the added marketplace in Codex. The marketplace
 points at [platforms/codex/](platforms/codex/), which contains the Codex
-manifest, hooks, and translated skills.
+manifest, hooks, and translated skills. Git-backed marketplaces support
+`codex plugin marketplace upgrade`; local marketplaces should be refreshed by
+removing and re-adding them.
+
+For local marketplace changes, refresh by removing and re-adding the marketplace:
+
+```
+codex plugin marketplace remove agenticnotetaking
+codex plugin marketplace add .
+```
 
 ### Key Files for Contributors
 
