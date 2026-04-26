@@ -30,6 +30,12 @@ marketplace_path="$(jq -r '.plugins[] | select(.name == "arscontexta") | .source
 skills_path="$(jq -r '.skills' platforms/codex/.codex-plugin/plugin.json)"
 [ "$skills_path" = "./skills/" ] || fail "Codex plugin-root manifest must point at translated Codex skills"
 
+[ -f "platforms/codex/reference/kernel.yaml" ] || fail "Codex plugin root must package reference/kernel.yaml"
+[ -f "platforms/codex/reference/claim-map.md" ] || fail "Codex plugin root must package reference/claim-map.md"
+[ -f "platforms/codex/reference/three-spaces.md" ] || fail "Codex plugin root must package reference/three-spaces.md"
+[ -d "platforms/codex/methodology" ] || fail "Codex plugin root must package methodology research graph"
+[ "$(find platforms/codex/methodology -type f -name '*.md' | wc -l | tr -d ' ')" -gt 0 ] || fail "Codex plugin methodology graph is empty"
+
 for skill in setup help ask health recommend architect add-domain reseed tutorial upgrade; do
   [ -f "platforms/codex/skills/$skill/SKILL.md" ] || fail "missing Codex skill: $skill"
 done

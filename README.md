@@ -398,9 +398,9 @@ codex plugin marketplace add .
 
 Then install `arscontexta` from the added marketplace in Codex. The marketplace
 points at [platforms/codex/](platforms/codex/), which contains the Codex
-manifest, hooks, and translated skills. Git-backed marketplaces support
-`codex plugin marketplace upgrade`; local marketplaces should be refreshed by
-removing and re-adding them.
+manifest, hooks, translated skills, reference docs, and bundled methodology
+research graph. Git-backed marketplaces support `codex plugin marketplace
+upgrade`; local marketplaces should be refreshed by removing and re-adding them.
 
 For local marketplace changes, refresh by removing and re-adding the marketplace:
 
