@@ -1282,7 +1282,7 @@ Apply vocabulary transformation to the template: field labels in comments and ex
 
 Generate ALL skills for the detected platform. Every vault ships with the complete skill set from day one. Full automation is the default — users opt down, never up.
 
-**Skill source templates live at `the Ars Contexta plugin root/skill-sources/`.** Each subdirectory contains a `SKILL.md` template that must be read, vocabulary-transformed, and written to the user's skills directory.
+**Skill source templates live at `the Ars Contexta plugin root/platforms/codex/skill-sources/` for Codex.** Each subdirectory contains a `SKILL.md` template that must be read, vocabulary-transformed, and written to the user's skills directory or documented as a Codex workflow in `CODEX.md`.
 
 The 16 skill sources to install:
 
@@ -1306,7 +1306,7 @@ The 16 skill sources to install:
 | `the Ars Contexta plugin root/skill-sources/refactor/` | refactor | Evolution |
 
 For each skill:
-1. Read `the Ars Contexta plugin root/skill-sources/[name]/SKILL.md`
+1. Read `the Ars Contexta plugin root/platforms/codex/skill-sources/[name]/SKILL.md`
 2. Apply vocabulary transformation — rename and update ALL internal references using the vocabulary mapping from `ops/derivation.md`
 3. Adjust skill metadata for the detected platform
 4. Write the transformed SKILL.md to the user's skills directory
@@ -1648,7 +1648,7 @@ Here's what you can do:
   /arscontexta:learn              -- research a topic and grow your graph
 ```
 
-Note: Plugin commands use the format `/arscontexta:command-name`. List all commands explicitly since they may not appear in tab completion. If skills were generated, note they require a Claude Code restart.
+Note: In Codex, show natural-language request patterns. Do not require slash commands or platform-specific restarts.
 
 **Codex output:**
 

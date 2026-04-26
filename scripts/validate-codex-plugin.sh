@@ -28,9 +28,13 @@ for skill in setup help ask health recommend architect add-domain reseed tutoria
   [ -f "platforms/codex/skills/$skill/SKILL.md" ] || fail "missing Codex skill: $skill"
 done
 
-if rg -n '^(context|model|allowed-tools|argument-hint):|CLAUDE_PLUGIN_ROOT|AskUserQuestion' platforms/codex/skills >/tmp/arscontexta-codex-skill-scan.txt; then
+for skill in reduce reflect reweave verify validate seed ralph pipeline tasks stats graph next learn remember rethink refactor; do
+  [ -f "platforms/codex/skill-sources/$skill/SKILL.md" ] || fail "missing Codex skill source: $skill"
+done
+
+if rg -n '^(context|model|allowed-tools|argument-hint):|CLAUDE_PLUGIN_ROOT|AskUserQuestion' platforms/codex/skills platforms/codex/skill-sources >/tmp/arscontexta-codex-skill-scan.txt; then
   cat /tmp/arscontexta-codex-skill-scan.txt >&2
-  fail "Codex skills contain Claude-only frontmatter or runtime tokens"
+  fail "Codex skills or skill sources contain Claude-only frontmatter or runtime tokens"
 fi
 
 tmp="${TMPDIR:-/tmp}/arscontexta-codex-validate-$$"
@@ -46,6 +50,34 @@ output="$(
 )"
 
 printf '%s' "$output" | grep -q 'Schema warnings for bad' || fail "Codex dispatcher did not validate apply_patch payload"
+
+printf 'body\n' > "$tmp/notes/bash-bad.md"
+output="$(
+  cd "$tmp" &&
+  printf '%s' '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"printf body > notes/bash-bad.md"}}' |
+    ops/scripts/codex-hooks.sh PostToolUse
+)"
+
+printf '%s' "$output" | grep -q 'Schema warnings for bash-bad' || fail "Codex dispatcher did not validate Bash redirect payload"
+
+printf 'body\n' > "$tmp/notes/second-bad.md"
+output="$(
+  cd "$tmp" &&
+  printf '%s' '{"hook_event_name":"PostToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: notes/bad.md\n@@\n body\n*** Update File: notes/second-bad.md\n@@\n body\n*** End Patch\n"}}' |
+    ops/scripts/codex-hooks.sh PostToolUse
+)"
+
+printf '%s' "$output" | grep -q 'Schema warnings for bad' || fail "Codex dispatcher did not validate first file in multi-file patch"
+printf '%s' "$output" | grep -q 'Schema warnings for second-bad' || fail "Codex dispatcher did not validate second file in multi-file patch"
+
+printf 'body\n' > "$tmp/notes/moved-bad.md"
+output="$(
+  cd "$tmp" &&
+  printf '%s' '{"hook_event_name":"PostToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: notes/bad.md\n*** Move to: notes/moved-bad.md\n@@\n body\n*** End Patch\n"}}' |
+    ops/scripts/codex-hooks.sh PostToolUse
+)"
+
+printf '%s' "$output" | grep -q 'Schema warnings for moved-bad' || fail "Codex dispatcher did not validate apply_patch move target"
 
 if command -v codex >/dev/null 2>&1; then
   codex_home="$tmp/codex-home"

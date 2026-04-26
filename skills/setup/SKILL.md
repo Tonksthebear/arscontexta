@@ -1275,7 +1275,7 @@ Apply vocabulary transformation to the template: field labels in comments and ex
 
 Generate ALL skills for the detected platform. Every vault ships with the complete skill set from day one. Full automation is the default — users opt down, never up.
 
-**Skill source templates live at `${CLAUDE_PLUGIN_ROOT}/skill-sources/`.** Each subdirectory contains a `SKILL.md` template that must be read, vocabulary-transformed, and written to the user's skills directory.
+**Skill source templates live at `${CLAUDE_PLUGIN_ROOT}/skill-sources/` for Claude Code and `${CLAUDE_PLUGIN_ROOT}/platforms/codex/skill-sources/` for Codex.** Each subdirectory contains a `SKILL.md` template that must be read, vocabulary-transformed, and written to the user's skills directory or documented as a Codex workflow in `CODEX.md`.
 
 The 16 skill sources to install:
 
@@ -1299,7 +1299,9 @@ The 16 skill sources to install:
 | `${CLAUDE_PLUGIN_ROOT}/skill-sources/refactor/` | refactor | Evolution |
 
 For each skill:
-1. Read `${CLAUDE_PLUGIN_ROOT}/skill-sources/[name]/SKILL.md`
+1. Read the platform-appropriate template:
+   - Claude Code: `${CLAUDE_PLUGIN_ROOT}/skill-sources/[name]/SKILL.md`
+   - Codex: `${CLAUDE_PLUGIN_ROOT}/platforms/codex/skill-sources/[name]/SKILL.md`
 2. Apply vocabulary transformation — rename and update ALL internal references using the vocabulary mapping from `ops/derivation.md`
 3. Adjust skill metadata for the detected platform
 4. Write the transformed SKILL.md to the user's skills directory

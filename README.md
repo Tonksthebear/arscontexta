@@ -343,6 +343,7 @@ arscontexta/
 |-- platforms/                   # Platform-specific adapters
 |   |-- claude-code/
 |   |-- codex/                   # Codex docs, hooks, and translated skills
+|   |   |-- skill-sources/        # Codex runtime workflow templates
 |   +-- shared/
 |-- presets/                     # Pre-validated configurations
 |-- scripts/                     # Utility scripts

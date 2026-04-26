@@ -36,6 +36,12 @@ tool_command() {
   fi
 }
 
+tool_response() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$INPUT" | jq -r '.tool_response // empty'
+  fi
+}
+
 emit_tree() {
   echo "## Workspace Structure"
   echo
@@ -72,20 +78,44 @@ session_start() {
 }
 
 paths_from_apply_patch() {
-  tool_command | awk '
+  {
+    tool_command
+    tool_response
+  } | awk '
     /^\*\*\* Add File: / { sub(/^\*\*\* Add File: /, ""); print; next }
     /^\*\*\* Update File: / { sub(/^\*\*\* Update File: /, ""); print; next }
     /^\*\*\* Delete File: / { sub(/^\*\*\* Delete File: /, ""); print; next }
+    /^\*\*\* Move to: / { sub(/^\*\*\* Move to: /, ""); print; next }
+    /^[AMDRCU][[:space:]]+/ { print $2; next }
   '
 }
 
 paths_from_bash() {
   cmd="$(tool_command)"
-  printf '%s\n' "$cmd" |
-    sed -n \
-      -e "s/.*> *['\"]\\{0,1\\}\\([^'\" ;|][^'\" ;|]*\\.md\\)['\"]\\{0,1\\}.*/\\1/p" \
-      -e "s/.*apply_patch.*\\*\\*\\* Add File: \\([^ ]*\\.md\\).*/\\1/p" \
-      -e "s/.*apply_patch.*\\*\\*\\* Update File: \\([^ ]*\\.md\\).*/\\1/p"
+  {
+    printf '%s\n' "$cmd" |
+      tr '"' ' ' |
+      tr "'" ' ' |
+      tr '(){}[]<>' '        ' |
+      tr ';|&' '   ' |
+      awk '
+        {
+          for (i = 1; i <= NF; i++) {
+            token = $i
+            sub(/^--?[A-Za-z0-9_-]+=*/, "", token)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", token)
+            gsub(/^[.][\/]/, "", token)
+            gsub(/[,.:]+$/, "", token)
+            if (token ~ /\.md$/) print token
+          }
+        }
+      '
+
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      git diff --name-only --diff-filter=ACMR -- '*.md' 2>/dev/null
+      git ls-files --others --exclude-standard -- '*.md' 2>/dev/null
+    fi
+  } | awk 'NF && !seen[$0]++'
 }
 
 validate_note() {
@@ -109,7 +139,7 @@ validate_note() {
 post_tool_use() {
   case "$(tool_name)" in
     apply_patch)
-      paths_from_apply_patch | while IFS= read -r path; do
+      paths_from_apply_patch | awk 'NF && !seen[$0]++' | while IFS= read -r path; do
         validate_note "$path"
       done
       ;;

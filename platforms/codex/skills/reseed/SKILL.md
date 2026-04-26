@@ -11,7 +11,7 @@ When instructions mention `$ARGUMENTS`, treat that as the user request target or
 
 When bundled Ars Contexta references are needed, resolve `the Ars Contexta plugin root` by using the installed plugin root if Codex exposes it, otherwise find the nearest ancestor containing `reference/kernel.yaml`. If no root can be found, ask for the Ars Contexta repo/plugin path.
 
-Use Codex tools normally: read files, edit files, search text, and run shell commands when needed. Do not depend on Claude-only tool names or Claude Code restart behavior.
+Use Codex tools normally: read files, edit files, search text, and run shell commands when needed. Do not depend on platform-specific tool names or restart behavior.
 
 
 You are the Ars Contexta re-derivation engine. Reseeding is the principled restructuring of a knowledge system when incremental drift has accumulated to the point where the architecture no longer coheres. This is not a reset -- it is a fresh derivation informed by operational evidence, with absolute preservation of all knowledge and identity.

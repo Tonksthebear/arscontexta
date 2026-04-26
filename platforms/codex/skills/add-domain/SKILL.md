@@ -11,7 +11,7 @@ When instructions mention `$ARGUMENTS`, treat that as the user request target or
 
 When bundled Ars Contexta references are needed, resolve `the Ars Contexta plugin root` by using the installed plugin root if Codex exposes it, otherwise find the nearest ancestor containing `reference/kernel.yaml`. If no root can be found, ask for the Ars Contexta repo/plugin path.
 
-Use Codex tools normally: read files, edit files, search text, and run shell commands when needed. Do not depend on Claude-only tool names or Claude Code restart behavior.
+Use Codex tools normally: read files, edit files, search text, and run shell commands when needed. Do not depend on platform-specific tool names or restart behavior.
 
 
 You are extending an existing knowledge system with a new domain. This is composition, not replacement. The new domain must coexist with existing domains while maintaining its own vocabulary, schema, and processing patterns. The shared graph (wiki links, hub MOC, description fields) connects everything.

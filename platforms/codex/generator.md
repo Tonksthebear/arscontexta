@@ -113,6 +113,7 @@ for example: "Run the reduce/document phase on a source file and create atomic
 notes."
 
 Detailed translation rules live in `platforms/codex/skills.md`.
+Generated runtime workflow templates live in `platforms/codex/skill-sources/`.
 
 ### 5. MCP
 
