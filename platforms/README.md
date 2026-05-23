@@ -36,7 +36,7 @@ platforms/
 During plugin packaging (Section 18 of the PRD), the build process references `platforms/` to assemble the distribution:
 
 - **Claude Code plugin** reads `platforms/shared/` and `platforms/claude-code/` to bundle feature blocks, templates, generation logic, and hook templates alongside the `skills/`, `reference/`, and `thinking/` directories.
-- **Codex plugin** reads `platforms/shared/` and `platforms/codex/` to expose the same methodology through Codex skills, `CODEX.md`, and Codex-native hook dispatch.
+- **Codex plugin** is installed from the repo root so its skills can read the same source files as Claude Code (`generators/`, `presets/`, `reference/`, `methodology/`, and `platforms/shared/`), while `platforms/codex/` provides Codex-native skills, `CODEX.md`, and hook dispatch.
 
 The `generators/` directory remains the canonical source. Files here are not duplicated -- README files document the relationship and provide platform-specific context that the generator files themselves don't carry.
 

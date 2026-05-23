@@ -25,11 +25,18 @@ sh -n \
   platforms/codex/hooks/codex-hooks.sh.template
 
 marketplace_path="$(jq -r '.plugins[] | select(.name == "arscontexta") | .source.path' .agents/plugins/marketplace.json)"
-[ "$marketplace_path" = "./platforms/codex" ] || fail "Marketplace must point at non-empty Codex plugin root"
+[ "$marketplace_path" = "." ] || fail "Marketplace must point at repo root so Codex packages source files used by skills"
+
+root_skills_path="$(jq -r '.skills' .codex-plugin/plugin.json)"
+[ "$root_skills_path" = "./platforms/codex/skills/" ] || fail "Repo-root Codex manifest must point at translated Codex skills"
 
 skills_path="$(jq -r '.skills' platforms/codex/.codex-plugin/plugin.json)"
 [ "$skills_path" = "./skills/" ] || fail "Codex plugin-root manifest must point at translated Codex skills"
 
+[ -f "generators/claude-md.md" ] || fail "Repo-root Codex package must include generators/claude-md.md"
+[ -d "generators/features" ] || fail "Repo-root Codex package must include generators/features"
+[ -d "presets" ] || fail "Repo-root Codex package must include presets"
+[ -d "platforms/shared" ] || fail "Repo-root Codex package must include platforms/shared"
 [ -f "platforms/codex/reference/kernel.yaml" ] || fail "Codex plugin root must package reference/kernel.yaml"
 [ -f "platforms/codex/reference/claim-map.md" ] || fail "Codex plugin root must package reference/claim-map.md"
 [ -f "platforms/codex/reference/three-spaces.md" ] || fail "Codex plugin root must package reference/three-spaces.md"

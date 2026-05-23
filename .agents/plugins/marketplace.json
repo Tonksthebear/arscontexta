@@ -8,7 +8,7 @@
       "name": "arscontexta",
       "source": {
         "source": "local",
-        "path": "./platforms/codex"
+        "path": "."
       },
       "policy": {
         "installation": "AVAILABLE",
