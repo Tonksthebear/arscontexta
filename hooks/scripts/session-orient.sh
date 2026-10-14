@@ -56,7 +56,7 @@ EOF
     git add ops/sessions/ 2>/dev/null
     [ -f self/goals.md ] && git add self/goals.md 2>/dev/null
     [ -f ops/goals.md ] && git add ops/goals.md 2>/dev/null
-    git commit -m "Session start: ${TIMESTAMP}" --quiet --no-verify 2>/dev/null || true
+    git commit -m "Session start: ${TIMESTAMP}" --quiet 2>/dev/null || true
   fi
 fi
 

@@ -32,7 +32,7 @@ git add "$WRITTEN_FILE" 2>/dev/null
 # 3. Commit with descriptive message
 # ─────────────────────────────────────────────
 # Use the filename as the commit message for quick identification.
-# --no-verify skips pre-commit hooks to keep auto-commits fast.
+# skips pre-commit hooks to keep auto-commits fast.
 
 BASENAME=$(basename "$WRITTEN_FILE")
-git commit -m "Auto: ${BASENAME}" --no-verify --quiet 2>/dev/null
+git commit -m "Auto: ${BASENAME}" --quiet 2>/dev/null

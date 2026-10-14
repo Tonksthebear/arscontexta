@@ -49,6 +49,6 @@ if [ -n "$STATS" ]; then
   MSG="$MSG | $STATS"
 fi
 
-git commit -m "$MSG" --no-verify 2>/dev/null || true
+git commit -m "$MSG" 2>/dev/null || true
 
 exit 0

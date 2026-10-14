@@ -47,7 +47,7 @@ fi
 if [ "$(bash "$READ_CONFIG" "git" "true")" = "true" ] && git rev-parse --is-inside-work-tree &>/dev/null; then
   git add -A 2>/dev/null
   if ! git diff --cached --quiet 2>/dev/null; then
-    git commit -m "Session end: ${TIMESTAMP} (${REASON})" --quiet --no-verify 2>/dev/null || true
+    git commit -m "Session end: ${TIMESTAMP} (${REASON})" --quiet 2>/dev/null || true
   fi
 fi
 
